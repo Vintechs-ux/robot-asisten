@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta http-equiv="Permissions-Policy" content="microphone=(), camera=()">
+  <title>RKbot</title>
+</head>
+<body>
+  <h1>Halo! Siapa nama majikan saya?</h1>
+  <button id="startButton">Mulai Bicara</button>
+  <p id="output"></p>
+
+  <script>
+    const API_URL = 'http://localhost:5000'; 
+    const output = document.getElementById("output");
+    const startButton = document.getElementById("startButton");
+    
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      output.textContent = "Maaf, browser Anda tidak mendukung Speech Recognition";
+      startButton.disabled = true;
+    }
+
+    async function requestMicrophonePermission() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        return true;
+      } catch (err) {
+        console.error("Mic permission error:", err);
+        return false;
+      }
+    }
+
+    startButton.addEventListener('click', async () => {
+      
+      const hasPermission = await requestMicrophonePermission();
+      if (!hasPermission) {
+        output.textContent = "Mohon izinkan akses mikrofon untuk melanjutkan";
+        return;
+      }
+      startRecognition();
+    });
+
+    function startRecognition() {
+      const recognition = new SpeechRecognition();
+      
+      
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'id-ID';
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        output.textContent = "Mendengarkan...";
+        startButton.disabled = true;
+        console.log("Mulai mendengarkan...");
+      };
+
+      recognition.onspeechend = () => {
+        console.log("Berhenti mendengarkan.");
+        startButton.disabled = false;
+        recognition.stop();
+      };
+
+      recognition.onerror = (e) => {
+        console.error("Speech Recognition Error:", e.error);
+        output.textContent = "Error: " + e.error;
+        startButton.disabled = false;
+        
+        if (e.error === 'not-allowed') {
+          output.textContent = "Mohon izinkan akses mikrofon di pengaturan browser Anda";
+        }
+      };
+
+      recognition.onresult = async (event) => {
+        try {
+          const majikan = event.results[0][0].transcript;
+          output.textContent = "Majikan: " + majikan;
+          console.log("Terdeteksi:", majikan);
+
+          const response = await fetch(`${API_URL}/api/v1/user`, {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify({ name: majikan })
+          });
+
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+
+          const data = await response.json();
+          output.textContent += "\nStatus: " + data.message;
+        } catch (error) {
+          console.error("Error:", error);
+          output.textContent = "Terjadi kesalahan saat menyimpan data";
+        } finally {
+          startButton.disabled = false;
+        }
+      };
+
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error("Error starting recognition:", error);
+        output.textContent = "Gagal memulai pengenalan suara";
+        startButton.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
