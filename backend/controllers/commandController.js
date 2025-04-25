@@ -1,29 +1,20 @@
-const User = require('../models/userModel');
-const { exec } = require('child_process');
+const { sendCommandToClients } = require("../websocketServer");
+const commandMap = require("../config/shellCommandMap");
+const catchAsync = require("../utils/catchAsync");
+const AppError = require("../utils/appError");
 
-exports.receiveCommand = async (req, res) => {
-    const { name, command } = req.body;
+const receiveCommand = catchAsync(async (req, res, next) => {
+  const { command } = req.body;
 
-    let result;
-    try {
-        if (command.toLowerCase().includes("word")) {
-            exec("start winword");
-            result = "Microsoft Word opened";
-        } else if (command.toLowerCase().includes("camera")) {
-            exec("start microsoft.windows.camera:");
-            result = "Camera opened";
-        } else {
-            result = "Unknown command";
-        }
+    const shellCommand = commandMap[command];
 
-        await User.updateOne(
-            { name },
-            { $push: { commands: { command, result } } },
-            { upsert: true }
-        );
-
-        res.json({ status: "success", result });
-    } catch (err) {
-        res.status(500).json({ status: "error", message: err.message });
+    if (!shellCommand) {
+      return next(new AppError("Unknown command", 400));
     }
-};
+
+    sendCommandToClients(shellCommand);
+    res.json({ status: "success", message: "Command sent to laptop" });
+  
+});
+
+module.exports = { receiveCommand };

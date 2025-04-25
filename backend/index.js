@@ -4,6 +4,9 @@ const app = express();
 const cors = require('cors');
 const commandRoutes = require('./routes/commandRoutes');
 const userRoutes = require('./routes/userRoutes');
+const AppError = require("./utils/appError");
+const globalErrorHandler = require("./controllers/errorController");
+const morgan = require("morgan");
 require('./websocketServer'); 
 
 
@@ -19,8 +22,15 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cors());
 
+if(process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
+
 app.use("/api/v1/command", commandRoutes);
 app.use("/api/v1/user", userRoutes);
+
+
+app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 5000;
 
