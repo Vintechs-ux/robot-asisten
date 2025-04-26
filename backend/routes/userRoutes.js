@@ -1,17 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/userModel');
-const catchAsync = require('../utils/catchAsync');
-router.post('/register', catchAsync(async (req, res, next) => {
-    const { name } = req.body;
-   
-        const user = new User({ name });
-        await user.save();
-        
-        res.status(201).json({
-            status: 'success',
-            user
-        });
-}));
+const { register, addLog } = require('../controllers/userController');
+const { protect } = require("./../middleware/auth");
+
+router.post('/register', register);
+router.post('/log', protect, addLog);
 
 module.exports = router;

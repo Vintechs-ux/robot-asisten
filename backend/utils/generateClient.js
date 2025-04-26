@@ -1,3 +1,14 @@
+const fs = require('fs');
+const path = require('path');
+
+exports.generateClientPython = (token) => {
+    try {
+        const generatedDir = path.join(__dirname, '../generated');
+        if (!fs.existsSync(generatedDir)) {
+            fs.mkdirSync(generatedDir);
+        }
+
+        const pythonCode = `
 import websocket
 import subprocess
 import json
@@ -5,18 +16,18 @@ import os
 import requests
 import re
 from tqdm import tqdm
-from win10toast import ToastNotifier
 import time
 
-toaster = ToastNotifier()
 API_BASE_URL = "http://192.168.1.13:5000/api/v1"
+ROBOT_TOKEN = "${token}"
 
 def send_log(status, command, result):
     try:
         data = {
             "status": status,
             "command": command,
-            "result": result
+            "result": result,
+            "token": ROBOT_TOKEN
         }
         
         response = requests.post(f"{API_BASE_URL}/user/log", json=data)
@@ -50,10 +61,7 @@ def download_with_progress(url, filename):
 
 def check_app_installed(name):
     try:
-      
         result = subprocess.run(f"winget list {name}", shell=True, capture_output=True, text=True)
-        
-
         if result.returncode == 0 and name.lower() in result.stdout.lower():
             return True
         return False
@@ -63,12 +71,10 @@ def check_app_installed(name):
 
 def install_from_url(name, url):
     try:
-    
         if check_app_installed(name):
             message = f"Aplikasi {name} sudah terinstall di sistem"
             print("[INFO]", message)
             send_log("info", f"check_install {name}", message)
-            toaster.show_toast("Info Instalasi", message, duration=5)
             return
             
         print(f"[INSTALL] Mengunduh dan menginstall {name} dari URL: {url}")
@@ -78,11 +84,10 @@ def install_from_url(name, url):
             result = subprocess.run(filename, shell=True, capture_output=True, text=True)
             success_msg = f"[DONE] {name} berhasil diinstall."
             print(success_msg)
-            toaster.show_toast("Install Selesai", f"{name} berhasil diinstall!", duration=5)
             send_log("success", f"install {name}", success_msg)
         else:
             error_msg = f"Gagal mengunduh {name}"
-            toaster.show_toast("Gagal Download", error_msg, duration=5)
+            print("[ERROR]", error_msg)
             send_log("error", f"install {name}", error_msg)
     except Exception as e:
         error_msg = f"Error installing {name}: {str(e)}"
@@ -93,17 +98,14 @@ def find_app_id(name):
     try:
         print(f"[INSTALL] Mencari aplikasi: {name}")
         result = subprocess.run(f"winget search {name}", shell=True, capture_output=True, text=True)
-
         output = result.stdout
         lines = output.splitlines()
-
         for line in lines:
             match = re.search(r'^\s*(.*?)\s{2,}(.*?)\s{2,}(.*?)$', line)
             if match:
                 app_name, app_id, source = match.groups()
                 if name.lower() in app_name.lower():
                     return app_id.strip()
-
         return None
     except Exception as e:
         print("[ERROR] Saat mencari app ID:", e)
@@ -111,27 +113,21 @@ def find_app_id(name):
 
 def install_app_winget(name):
     try:
-
         if check_app_installed(name):
             message = f"Aplikasi {name} sudah terinstall di sistem"
             print("[INFO]", message)
             send_log("info", f"check_install {name}", message)
-            toaster.show_toast("Info Instalasi", message, duration=5)
             return
             
-        toaster.show_toast("Install Aplikasi", f"Mencari {name} di Winget...", duration=5)
-
+        print(f"[INFO] Mencari {name} di Winget...")
         app_id = find_app_id(name)
         if not app_id:
             error_msg = f"Tidak menemukan aplikasi {name} di Winget"
-            toaster.show_toast("Install Gagal", error_msg, duration=5)
-            print("[ERROR] App ID tidak ditemukan")
+            print("[ERROR]", error_msg)
             send_log("error", f"install {name}", error_msg)
             return
 
-        toaster.show_toast("Install Aplikasi", f"Memulai install {name}...", duration=5)
         print(f"[INSTALL] Installing {app_id}...")
-
         result = subprocess.run(
             f"winget install --id {app_id} --exact --accept-source-agreements --accept-package-agreements --silent",
             shell=True, capture_output=True, text=True
@@ -139,19 +135,16 @@ def install_app_winget(name):
 
         if result.returncode == 0:
             success_msg = f"{name} berhasil diinstall!"
-            toaster.show_toast("Install Selesai", success_msg, duration=5)
-            print("[DONE]", result.stdout)
+            print("[SUCCESS]", success_msg)
             send_log("success", f"install {name}", success_msg)
         else:
             error_msg = f"Error install {name}: {result.stderr}"
-            toaster.show_toast("Install Gagal", f"Error install {name}", duration=5)
-            print("[ERROR]", result.stdout, result.stderr)
+            print("[ERROR]", error_msg)
             send_log("error", f"install {name}", error_msg)
 
     except Exception as e:
         error_msg = f"Exception saat install {name}: {str(e)}"
-        toaster.show_toast("Install Gagal", f"Exception: {e}", duration=5)
-        print("[EXCEPTION]", str(e))
+        print("[ERROR]", error_msg)
         send_log("error", f"install {name}", error_msg)
 
 def on_message(ws, message):
@@ -197,7 +190,6 @@ def on_open(ws):
     print("[INFO] Tersambung ke WebSocket Server")
     send_log("info", "websocket", "Koneksi websocket terhubung")
 
-
 ws = websocket.WebSocketApp("ws://192.168.1.13:7071",
                             on_open=on_open,
                             on_message=on_message,
@@ -205,3 +197,14 @@ ws = websocket.WebSocketApp("ws://192.168.1.13:7071",
                             on_close=on_close)
 
 ws.run_forever()
+`;
+
+        const outputPath = path.join(generatedDir, 'laptop_client.py');
+        fs.writeFileSync(outputPath, pythonCode);
+
+        return outputPath;
+    } catch (error) {
+        console.error('Error generating client:', error);
+        throw error;
+    }
+}; 

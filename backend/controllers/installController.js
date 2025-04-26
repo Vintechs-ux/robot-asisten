@@ -5,11 +5,21 @@ const AppError = require("../utils/appError");
 
 const installApp = catchAsync(async (req, res, next) => {
   const { name } = req.body;
+  const user = req.user; 
+
   if (!name) return next(new AppError("Nama aplikasi diperlukan", 400));
 
   const app = await App.findOne({ name: name.toLowerCase() });
 
   if (app) {
+  
+    user.commands.push({
+      command: `install ${name}`,
+      result: "Instalasi dimulai via direct URL",
+      status: "info"
+    });
+    await user.save();
+
     sendCommandToClients({
       type: "install_app",
       method: "direct",
@@ -23,6 +33,13 @@ const installApp = catchAsync(async (req, res, next) => {
       message: `Mengirim perintah instalasi ${app.displayName}`,
     });
   }
+
+  user.commands.push({
+    command: `install ${name}`,
+    result: "Instalasi dimulai via winget",
+    status: "info"
+  });
+  await user.save();
 
   sendCommandToClients({
     type: "install_app",
