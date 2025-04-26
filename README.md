@@ -3,6 +3,7 @@
 Robot Asisten adalah sistem yang memungkinkan kontrol laptop sistem operasi Windows melalui perintah suara yang diproses oleh robot (ESP32). 
 Terdiri dari backend server sebagai otak robot serta program eksekusi shell pada laptop user melalui webscoket server .
 
+![Diagram Alur Kerja Robot Asisten](/Diagram.jpeg)
 
 ## Fitur Utama
 
