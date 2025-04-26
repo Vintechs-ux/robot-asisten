@@ -3,6 +3,7 @@ const connectDB = require("./config/db");
 const app = express();
 const cors = require('cors');
 const commandRoutes = require('./routes/commandRoutes');
+const installRoutes = require("./routes/installRoutes");
 const userRoutes = require('./routes/userRoutes');
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controllers/errorController");
@@ -26,9 +27,9 @@ if(process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-app.use("/api/v1/command", commandRoutes);
 app.use("/api/v1/user", userRoutes);
-
+app.use("/api/v1/command", commandRoutes);
+app.use("/api/v1/install", installRoutes);
 
 app.use(globalErrorHandler);
 
