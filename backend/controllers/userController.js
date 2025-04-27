@@ -47,12 +47,9 @@ exports.register = catchAsync(async (req, res, next) => {
 });
 
 exports.addLog = catchAsync(async (req, res, next) => {
-    const { name, token } = req.headers;
-    const { status, command, result } = req.body;
+    const { status, command, result, token } = req.body;
 
-   
     const robot = await User.findOne({ 
-        name, 
         robotToken: token,
         isActive: true 
     });
@@ -61,7 +58,6 @@ exports.addLog = catchAsync(async (req, res, next) => {
         return next(new AppError('Robot tidak valid atau tidak aktif', 401));
     }
 
-   
     robot.commands.push({
         command,
         result,

@@ -1,57 +1,75 @@
 const App = require("../models/appModel");
+const InstalledApp = require("../models/installedAppModel");
 const { sendCommandToClients } = require("../websocketServer");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 
 const installApp = catchAsync(async (req, res, next) => {
   const { name } = req.body;
-  const user = req.user; 
+  const token = req.body.token;
 
-  if (!name) return next(new AppError("Nama aplikasi diperlukan", 400));
+  if (!name) {
+    return next(new AppError("Nama aplikasi diperlukan", 400));
+  }
+
+
+  const installedApps = await InstalledApp.findOne({ robotToken: token });
+  if (installedApps) {
+    const isInstalled = installedApps.installedApps.some(
+      app => app.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (isInstalled) {
+      return res.json({
+        status: "info",
+        message: `Aplikasi ${name} sudah terinstall di laptop kamu`
+      });
+    }
+  }
+
 
   const app = await App.findOne({ name: name.toLowerCase() });
 
-  if (app) {
-  
-    user.commands.push({
-      command: `install ${name}`,
-      result: "Instalasi dimulai via direct URL",
-      status: "info"
-    });
-    await user.save();
+  try {
+    if (app) {
+     
+      const response = await sendCommandToClients({
+        command: {
+          type: "install_app",
+          method: "direct",
+          name: app.name,
+          download_url: app.download_url
+        },
+        token: token
+      });
 
-    sendCommandToClients({
-      type: "install_app",
-      method: "direct",
-      name: app.name,
-      download_url: app.download_url,
-    });
+      return res.json({
+        status: response.status,
+        message: response.result
+      });
 
-    return res.json({
-      status: "success",
-      method: "direct",
-      message: `Mengirim perintah instalasi ${app.displayName}`,
+    } else {
+   
+      const response = await sendCommandToClients({
+        command: {
+          type: "install_app",
+          method: "winget", 
+          name: name
+        },
+        token: token
+      });
+
+      return res.json({
+        status: response.status,
+        message: response.result
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: error.message
     });
   }
-
-  user.commands.push({
-    command: `install ${name}`,
-    result: "Instalasi dimulai via winget",
-    status: "info"
-  });
-  await user.save();
-
-  sendCommandToClients({
-    type: "install_app",
-    method: "winget",
-    name: name,
-  });
-
-  return res.json({
-    status: "warning",
-    method: "winget",
-    message: `Aplikasi tidak ditemukan di database, mencoba install dengan winget: ${name}`,
-  });
 });
 
 const getAllApps = catchAsync(async (req, res, next) => {

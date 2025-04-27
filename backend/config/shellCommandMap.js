@@ -193,7 +193,18 @@ const commandMap = {
     "bluetooth_off": "powershell \"Add-Type -AssemblyName System.Runtime.WindowsRuntime;[Windows.Devices.Radios.Radio,Windows.System.Devices,ContentType=WindowsRuntime].GetMethod('RequestAccessAsync').Invoke(\$null,\$null).AsTask().Wait();[Windows.Devices.Radios.Radio]::GetDefaultAsync().AsTask().Result.SetStateAsync([Windows.Devices.Radios.RadioState]::Off).AsTask().Wait()\"",
     "wifi_on": "netsh interface set interface \"Wi-Fi\" enabled",
     "wifi_off": "netsh interface set interface \"Wi-Fi\" disabled",
-    "refresh": "taskkill /F /IM explorer.exe & start explorer.exe"
+    "refresh": "taskkill /F /IM explorer.exe & start explorer.exe",
+
+
+    "get_system_info": "get_system_info",
+    "get_installed_apps": "get_installed_apps",
+    "get_running_processes": "get_running_processes",
+    "close_all_apps": "close_all_apps",
+
+    ///// Untuk system info /////
+    "system_info": "start ms-settings:system",
+    "cek_spesifikasi": "start ms-settings:system",
+    "properties_laptop": "start ms-settings:system",
 };
 
 module.exports = commandMap;

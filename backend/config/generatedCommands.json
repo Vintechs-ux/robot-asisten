@@ -1,0 +1,82 @@
+{
+  "HoYoPlay": {
+    "open": "start hoyoplay",
+    "close": "taskkill /IM hoyoplay.exe /F",
+    "uninstall": "winget uninstall --name \"HoYoPlay\" --silent"
+  },
+  "Mozilla Firefox (x64 en-US)": {
+    "open": "start mozilla firefox (x64 en-us)",
+    "close": "taskkill /IM mozilla firefox (x64 en-us).exe /F",
+    "uninstall": "winget uninstall --name \"Mozilla Firefox (x64 en-US)\" --silent"
+  },
+  "Mozilla Maintenance Service": {
+    "open": "start mozilla maintenance service",
+    "close": "taskkill /IM mozilla maintenance service.exe /F",
+    "uninstall": "winget uninstall --name \"Mozilla Maintenance Service\" --silent"
+  },
+  "Microsoft Office Standard 2016": {
+    "open": "start microsoft office standard 2016",
+    "close": "taskkill /IM microsoft office standard 2016.exe /F",
+    "uninstall": "winget uninstall --name \"Microsoft Office Standard 2016\" --silent"
+  },
+  "Safer Web": {
+    "open": "start safer web",
+    "close": "taskkill /IM safer web.exe /F",
+    "uninstall": "winget uninstall --name \"Safer Web\" --silent"
+  },
+  "VLC media player": {
+    "open": "start vlc media player",
+    "close": "taskkill /IM vlc media player.exe /F",
+    "uninstall": "winget uninstall --name \"VLC media player\" --silent"
+  },
+  "WinRAR 7.00 (64-bit)": {
+    "open": "start winrar 7.00 (64-bit)",
+    "close": "taskkill /IM winrar 7.00 (64-bit).exe /F",
+    "uninstall": "winget uninstall --name \"WinRAR 7.00 (64-bit)\" --silent"
+  },
+  "Python 3.13.0 Executables (64-bit)": {
+    "open": "start python 3.13.0 executables (64-bit)",
+    "close": "taskkill /IM python 3.13.0 executables (64-bit).exe /F",
+    "uninstall": "winget uninstall --name \"Python 3.13.0 Executables (64-bit)\" --silent"
+  },
+  "Microsoft Visual C++ 2013 x64 Additional Runtime - 12.0.40664": {
+    "open": "start microsoft visual c++ 2013 x64 additional runtime - 12.0.40664",
+    "close": "taskkill /IM microsoft visual c++ 2013 x64 additional runtime - 12.0.40664.exe /F",
+    "uninstall": "winget uninstall --name \"Microsoft Visual C++ 2013 x64 Additional Runtime - 12.0.40664\" --silent"
+  },
+  "Python 3.13.0 Standard Library (64-bit)": {
+    "open": "start python 3.13.0 standard library (64-bit)",
+    "close": "taskkill /IM python 3.13.0 standard library (64-bit).exe /F",
+    "uninstall": "winget uninstall --name \"Python 3.13.0 Standard Library (64-bit)\" --silent"
+  },
+  "Python 3.13.0 pip Bootstrap (64-bit)": {
+    "open": "start python 3.13.0 pip bootstrap (64-bit)",
+    "close": "taskkill /IM python 3.13.0 pip bootstrap (64-bit).exe /F",
+    "uninstall": "winget uninstall --name \"Python 3.13.0 pip Bootstrap (64-bit)\" --silent"
+  },
+  "IBM SPSS Statistics 26": {
+    "open": "start ibm spss statistics 26",
+    "close": "taskkill /IM ibm spss statistics 26.exe /F",
+    "uninstall": "winget uninstall --name \"IBM SPSS Statistics 26\" --silent"
+  },
+  "Microsoft .NET Host - 6.0.16 (x64)": {
+    "open": "start microsoft .net host - 6.0.16 (x64)",
+    "close": "taskkill /IM microsoft .net host - 6.0.16 (x64).exe /F",
+    "uninstall": "winget uninstall --name \"Microsoft .NET Host - 6.0.16 (x64)\" --silent"
+  },
+  "Microsoft Visual C++ 2010  x64 Redistributable - 10.0.40219": {
+    "open": "start microsoft visual c++ 2010  x64 redistributable - 10.0.40219",
+    "close": "taskkill /IM microsoft visual c++ 2010  x64 redistributable - 10.0.40219.exe /F",
+    "uninstall": "winget uninstall --name \"Microsoft Visual C++ 2010  x64 Redistributable - 10.0.40219\" --silent"
+  },
+  "Microsoft Update Health Tools": {
+    "open": "start microsoft update health tools",
+    "close": "taskkill /IM microsoft update health tools.exe /F",
+    "uninstall": "winget uninstall --name \"Microsoft Update Health Tools\" --silent"
+  },
+  "Discord": {
+    "open": "start discord",
+    "close": "taskkill /IM discord.exe /F",
+    "uninstall": "winget uninstall --name \"Discord\" --silent"
+  }
+}

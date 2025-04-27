@@ -4,11 +4,13 @@ const app = express();
 const cors = require('cors');
 const commandRoutes = require('./routes/commandRoutes');
 const installRoutes = require("./routes/installRoutes");
+const systemRoutes = require("./routes/systemRoutes")
 const userRoutes = require('./routes/userRoutes');
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controllers/errorController");
 const morgan = require("morgan");
 require('./websocketServer'); 
+const uninstallRoutes = require('./routes/uninstallRoutes');
 
 
 connectDB();
@@ -30,6 +32,8 @@ if(process.env.NODE_ENV === "development") {
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/command", commandRoutes);
 app.use("/api/v1/install", installRoutes);
+app.use("/api/v1/system", systemRoutes)
+app.use("/api/v1/uninstall", uninstallRoutes);
 
 app.use(globalErrorHandler);
 
