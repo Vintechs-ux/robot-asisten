@@ -78,5 +78,50 @@
     "open": "start discord",
     "close": "taskkill /IM discord.exe /F",
     "uninstall": "winget uninstall --name \"Discord\" --silent"
+  },
+  "Java 8 Update 51 (64-bit)": {
+    "open": "start java 8 update 51 (64-bit)",
+    "close": "taskkill /IM java 8 update 51 (64-bit).exe /F",
+    "uninstall": "winget uninstall --name \"Java 8 Update 51 (64-bit)\" --silent"
+  },
+  "Microsoft Visual C++ 2012 x64 Additional Runtime - 11.0.61030": {
+    "open": "start microsoft visual c++ 2012 x64 additional runtime - 11.0.61030",
+    "close": "taskkill /IM microsoft visual c++ 2012 x64 additional runtime - 11.0.61030.exe /F",
+    "uninstall": "winget uninstall --name \"Microsoft Visual C++ 2012 x64 Additional Runtime - 11.0.61030\" --silent"
+  },
+  "Microsoft Visual C++ 2008 Redistributable - x64 9.0.30729.4148": {
+    "open": "start microsoft visual c++ 2008 redistributable - x64 9.0.30729.4148",
+    "close": "taskkill /IM microsoft visual c++ 2008 redistributable - x64 9.0.30729.4148.exe /F",
+    "uninstall": "winget uninstall --name \"Microsoft Visual C++ 2008 Redistributable - x64 9.0.30729.4148\" --silent"
+  },
+  "Microsoft Visual C++ 2013 x64 Minimum Runtime - 12.0.40664": {
+    "open": "start microsoft visual c++ 2013 x64 minimum runtime - 12.0.40664",
+    "close": "taskkill /IM microsoft visual c++ 2013 x64 minimum runtime - 12.0.40664.exe /F",
+    "uninstall": "winget uninstall --name \"Microsoft Visual C++ 2013 x64 Minimum Runtime - 12.0.40664\" --silent"
+  },
+  "Microsoft Visual C++ 2022 X64 Additional Runtime - 14.40.33810": {
+    "open": "start microsoft visual c++ 2022 x64 additional runtime - 14.40.33810",
+    "close": "taskkill /IM microsoft visual c++ 2022 x64 additional runtime - 14.40.33810.exe /F",
+    "uninstall": "winget uninstall --name \"Microsoft Visual C++ 2022 X64 Additional Runtime - 14.40.33810\" --silent"
+  },
+  "Python 3.13.0 Development Libraries (64-bit)": {
+    "open": "start python 3.13.0 development libraries (64-bit)",
+    "close": "taskkill /IM python 3.13.0 development libraries (64-bit).exe /F",
+    "uninstall": "winget uninstall --name \"Python 3.13.0 Development Libraries (64-bit)\" --silent"
+  },
+  "Windows PC Health Check": {
+    "open": "start windows pc health check",
+    "close": "taskkill /IM windows pc health check.exe /F",
+    "uninstall": "winget uninstall --name \"Windows PC Health Check\" --silent"
+  },
+  "Microsoft Visual C++ 2008 Redistributable - x64 9.0.30729.17": {
+    "open": "msiexec /i vcredist_x64.exe",
+    "close": "Tidak dapat menutup aplikasi ini karena aplikasi ini tidak dapat dijalankan secara interaktif",
+    "uninstall": "msiexec /x vcredist_x64.exe /qb"
+  },
+  "Spotify": {
+    "open": "start \"\" \"C:\\Program Files\\Spotify\\Spotify.exe\"",
+    "close": "taskkill /f /im Spotify.exe",
+    "uninstall": "wmic product where \"name='Spotify'\" call uninstall"
   }
 }

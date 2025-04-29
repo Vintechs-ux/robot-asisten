@@ -185,9 +185,7 @@ exports.updateInstalledApps = catchAsync(async (req, res) => {
         { upsert: true }
     );
 
-
-    if (shouldGenerateCommands) {
-     
+    if (shouldGenerateCommands === true) {
         generateCommandsForApps(installedApps).catch(console.error);
     }
 

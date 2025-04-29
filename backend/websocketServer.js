@@ -43,17 +43,26 @@ function sendCommandToClients(data) {
       return;
     }
 
+  
+    if (typeof data.command === 'string') {
+      data = {
+        token: data.token,
+        command: {
+          type: "shell_command",
+          command: data.command
+        }
+      };
+    }
+
     const timeoutId = setTimeout(() => {
       commandCallbacks.delete(token);
       reject(new Error('Command timeout'));
     }, 60000);
 
-   
     commandCallbacks.set(token, (response) => {
       clearTimeout(timeoutId);
       resolve(response);
     });
-
 
     connectedClients.forEach(client => {
       client.send(JSON.stringify(data));

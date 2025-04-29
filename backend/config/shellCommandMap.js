@@ -115,7 +115,7 @@ const commandMap = {
     "open_vscode": "start code",
     "open_notepad": "start notepad",
     "open_calculator": "start calc",
-    "open_paint": "start mspaint",
+    "open_paint": "start mspaint",         
     "open_cmd": "start cmd",
     "open_powershell": "start powershell",
     "open_wmp": "start wmplayer",

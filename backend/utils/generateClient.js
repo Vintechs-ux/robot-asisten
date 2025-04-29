@@ -199,7 +199,7 @@ ws = websocket.WebSocketApp("ws://192.168.1.13:7071",
 ws.run_forever()
 `;
 
-        const outputPath = path.join(generatedDir, 'laptop_client.py');
+        const outputPath = path.join(generatedDir, 'laptop_client1.py');
         fs.writeFileSync(outputPath, pythonCode);
 
         return outputPath;

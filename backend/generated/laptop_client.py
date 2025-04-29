@@ -28,12 +28,12 @@ def send_log(status, command, result):
         response = requests.post(f"{API_BASE_URL}/user/log", json=data)
         
         if response.status_code == 200:
-            print(f"[LOG] Berhasil mengirim log: {status} - {command}")
+            print(f"[{status.upper()}] {command}: {result}")
         else:
-            print(f"[ERROR] Gagal mengirim log: {response.status_code} - {response.text}")
+            print(f"[ERROR] Gagal mengirim log: {response.status_code}")
             
     except Exception as e:
-        print(f"[ERROR] Gagal mengirim log: {e}")
+        print(f"[ERROR] Gagal mengirim log: {str(e)}")
 
 def download_with_progress(url, filename):
     try:
@@ -56,12 +56,41 @@ def download_with_progress(url, filename):
 
 def check_app_installed(name):
     try:
-        result = subprocess.run(f"winget list {name}", shell=True, capture_output=True, text=True)
-        if result.returncode == 0 and name.lower() in result.stdout.lower():
+        winget_result = subprocess.run(
+            f'winget list "{name}"', 
+            shell=True, 
+            capture_output=True, 
+            text=True,
+            encoding='utf-8'
+        )
+        
+        reg_result = subprocess.run(
+            f'reg query HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall /s /f "{name}"',
+            shell=True,
+            capture_output=True,
+            text=True,
+            encoding='utf-8'
+        )
+        
+        store_result = subprocess.run(
+            f'powershell -command "Get-AppxPackage *{name}*"',
+            shell=True,
+            capture_output=True,
+            text=True,
+            encoding='utf-8'
+        )
+        
+        if (winget_result.returncode == 0 and name.lower() in winget_result.stdout.lower()) or \
+           (reg_result.returncode == 0 and name.lower() in reg_result.stdout.lower()) or \
+           (store_result.returncode == 0 and name.lower() in store_result.stdout.lower()):
+            print(f"[INFO] Aplikasi {name} ditemukan")
             return True
+            
+        print(f"[INFO] Aplikasi {name} tidak ditemukan")
         return False
+            
     except Exception as e:
-        print(f"[ERROR] Gagal mengecek aplikasi: {e}")
+        print(f"[ERROR] Gagal mengecek aplikasi: {str(e)}")
         return False
 
 def install_from_url(name, url):
@@ -92,18 +121,53 @@ def install_from_url(name, url):
 def find_app_id(name):
     try:
         print(f"[INSTALL] Mencari aplikasi: {name}")
-        result = subprocess.run(f"winget search {name}", shell=True, capture_output=True, text=True)
-        output = result.stdout
-        lines = output.splitlines()
+        result = subprocess.run(
+            ["winget", "search", name, "--accept-source-agreements"], 
+            capture_output=True, 
+            text=True,
+            encoding='utf-8'
+        )
+        
+        print(f"[DEBUG] Winget search output: {result.stdout}")
+        
+        if result.returncode != 0:
+            print(f"[ERROR] Winget search error: {result.stderr}")
+            return None
+            
+        lines = result.stdout.splitlines()
+        found_apps = []
+        
         for line in lines:
-            match = re.search(r'^s*(.*?)s{2,}(.*?)s{2,}(.*?)$', line)
+            match = re.search(r'^([^\s].*?)\s+([^\s].*?)\s+([^\s].*?)\s+([^\s].*?)$', line)
             if match:
-                app_name, app_id, source = match.groups()
+                app_name, id, version, source = match.groups()
+                app_name = app_name.strip()
+                id = id.strip()
+                source = source.strip()
+                
                 if name.lower() in app_name.lower():
-                    return app_id.strip()
+                    found_apps.append({
+                        "name": app_name,
+                        "id": id,
+                        "source": source
+                    })
+                    print(f"[INFO] Menemukan aplikasi - Nama: {app_name}, ID: {id}, Source: {source}")
+        
+        if found_apps:
+            winget_apps = [app for app in found_apps if "winget" in app["source"].lower()]
+            if winget_apps:
+                selected = winget_apps[0]
+            else:
+                selected = found_apps[0]
+                
+            print(f"[INFO] Menggunakan aplikasi: {selected['name']} dari {selected['source']}")
+            return selected["id"]
+                    
+        print(f"[INFO] Tidak menemukan ID untuk aplikasi: {name}")
         return None
+        
     except Exception as e:
-        print("[ERROR] Saat mencari app ID:", e)
+        print(f"[ERROR] Error saat mencari app ID: {str(e)}")
         return None
 
 def install_app_winget(name):
@@ -112,35 +176,53 @@ def install_app_winget(name):
             message = f"Aplikasi {name} sudah terinstall di sistem"
             print("[INFO]", message)
             send_log("info", f"check_install {name}", message)
-            return
+            return True, message
             
         print(f"[INFO] Mencari {name} di Winget...")
         app_id = find_app_id(name)
+        
         if not app_id:
             error_msg = f"Tidak menemukan aplikasi {name} di Winget"
             print("[ERROR]", error_msg)
             send_log("error", f"install {name}", error_msg)
-            return
+            return False, error_msg
 
         print(f"[INSTALL] Installing {app_id}...")
+        install_cmd = [
+            "winget", "install", 
+            "--id", app_id,
+            "--accept-source-agreements",
+            "--accept-package-agreements",
+            "--silent"
+        ]
+        
         result = subprocess.run(
-            f"winget install --id {app_id} --exact --accept-source-agreements --accept-package-agreements --silent",
-            shell=True, capture_output=True, text=True
+            install_cmd,
+            capture_output=True,
+            text=True,
+            encoding='utf-8'
         )
+
+        print(f"[DEBUG] Install output: {result.stdout}")
+        if result.stderr:
+            print(f"[DEBUG] Install stderr: {result.stderr}")
 
         if result.returncode == 0:
             success_msg = f"{name} berhasil diinstall!"
             print("[SUCCESS]", success_msg)
             send_log("success", f"install {name}", success_msg)
+            return True, success_msg
         else:
-            error_msg = f"Error install {name}: {result.stderr}"
+            error_msg = f"Error install {name}: {result.stderr or result.stdout}"
             print("[ERROR]", error_msg)
             send_log("error", f"install {name}", error_msg)
+            return False, error_msg
 
     except Exception as e:
         error_msg = f"Exception saat install {name}: {str(e)}"
         print("[ERROR]", error_msg)
         send_log("error", f"install {name}", error_msg)
+        return False, error_msg
 
 def get_system_info():
     try:
@@ -211,8 +293,8 @@ def get_installed_apps():
         apps = []
       
         paths = [
-            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\\Uninstall",
+            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\\Uninstall"
         ]
         
         for path in paths:
@@ -236,7 +318,6 @@ def get_installed_apps():
             except:
                 continue
 
-   
         try:
             result = subprocess.run("winget list", shell=True, capture_output=True, text=True)
             if result.returncode == 0:
@@ -255,12 +336,11 @@ def get_installed_apps():
         except Exception as e:
             print("[ERROR] Gagal mendapatkan daftar aplikasi dari winget:", str(e))
 
-      
         try:
             data = {
                 "token": ROBOT_TOKEN,
                 "installedApps": apps,
-                "shouldGenerateCommands": True
+                "shouldGenerateCommands": False
             }
             response = requests.post(f"{API_BASE_URL}/system/update-apps", json=data)
             if response.status_code == 200:
@@ -281,8 +361,8 @@ def get_installed_apps():
 def get_registry_apps():
     apps = []
     paths = [
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\\Uninstall",
+        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\\Uninstall"
     ]
     
     for path in paths:
@@ -361,30 +441,62 @@ def close_all_apps():
 def uninstall_app(name):
     try:
         print(f"[UNINSTALL] Menjalankan uninstall untuk: {name}")
-    
-        result = subprocess.run(
-            f"winget uninstall --name \"{name}\" --silent",
-            shell=True, capture_output=True, text=True
-        )
-
-     
-        success_msg = f"{name} berhasil di-uninstall"
-        print("[SUCCESS]", success_msg)
-        send_log("success", f"uninstall {name}", success_msg)
         
-    
-        get_installed_apps()
-        return True
+        if not check_app_installed(name):
+            error_msg = f"Aplikasi {name} tidak ditemukan"
+            print(f"[ERROR] {error_msg}")
+            return False, error_msg
+            
+        uninstall_commands = [
+            f'winget uninstall --name "{name}" --silent',
+            f'winget uninstall --id "{name}" --silent',
+            f'wmic product where "name like \'%{name}%\'" call uninstall /nointeractive',
+            f'powershell -command "Get-AppxPackage *{name}* | Remove-AppxPackage"'
+        ]
+        
+        success = False
+        for cmd in uninstall_commands:
+            print(f"[DEBUG] Mencoba command: {cmd}")
+            result = subprocess.run(
+                cmd,
+                shell=True, 
+                capture_output=True, 
+                text=True,
+                encoding='utf-8'
+            )
+
+            print(f"[DEBUG] Output: {result.stdout}")
+            if result.stderr:
+                print(f"[DEBUG] Error: {result.stderr}")
+
+            if result.returncode == 0 and not check_app_installed(name):
+                success = True
+                break
+                
+        if success:
+            success_msg = f"Aplikasi {name} berhasil di-uninstall"
+            print(f"[SUCCESS] {success_msg}")
+            send_log("success", f"uninstall {name}", success_msg)
+            
+            time.sleep(2)
+            get_installed_apps()
+            return True
+        else:
+            error_msg = f"Gagal uninstall {name}"
+            print(f"[ERROR] {error_msg}")
+            send_log("error", f"uninstall {name}", error_msg)
+            return False
 
     except Exception as e:
         error_msg = f"Error saat uninstall {name}: {str(e)}"
-        print("[ERROR]", error_msg)
+        print(f"[ERROR] {error_msg}")
         send_log("error", f"uninstall {name}", error_msg)
         return False
 
 def on_message(ws, message):
     try:
-        print("[DEBUG] Pesan diterima:", message)
+        print("\n[DEBUG] -------- Pesan Baru --------")
+        print(f"[DEBUG] Pesan diterima: {message}")
         data = json.loads(message)
         command = data.get("command")
         token = data.get("token")
@@ -401,23 +513,41 @@ def on_message(ws, message):
 
         if isinstance(command, dict):
             command_type = command.get("type")
+            print(f"[INFO] Menjalankan command type: {command_type}")
             
-            if command_type == "uninstall_app":
+            if command_type == "shell_command":
+                try:
+                    cmd = command.get("command")
+                    print(f"[EXEC] Menjalankan: {cmd}")
+                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding='utf-8')
+                    
+                    if result.returncode == 0:
+                        response["status"] = "success"
+                        response["result"] = f"Command berhasil dieksekusi"
+                        print(f"[SUCCESS] Command berhasil")
+                    else:
+                        response["status"] = "error"
+                        response["result"] = f"Error: {result.stderr}"
+                        print(f"[ERROR] Command gagal: {result.stderr}")
+                except Exception as e:
+                    response["status"] = "error"
+                    response["result"] = str(e)
+                    print(f"[ERROR] Exception: {str(e)}")
+            
+            elif command_type == "uninstall_app":
                 name = command.get("name")
                 if not name:
                     response["status"] = "error"
                     response["result"] = "Nama aplikasi tidak diberikan"
                 else:
-                    # Coba uninstall
-                    success = uninstall_app(name)
+                    success, message = uninstall_app(name)
                     if success:
-                       
                         get_installed_apps() 
                         response["status"] = "success"
-                        response["result"] = f"Aplikasi {name} berhasil di-uninstall"
+                        response["result"] = message
                     else:
                         response["status"] = "error"
-                        response["result"] = f"Gagal uninstall aplikasi {name}"
+                        response["result"] = message
 
             elif command_type == "install_app":
                 method = command.get("method")
@@ -428,12 +558,9 @@ def on_message(ws, message):
                     response["status"] = "error"
                     response["result"] = "Nama aplikasi tidak diberikan"
                 elif method == "winget":
-                    if check_app_installed(name):
-                        response["status"] = "info"
-                        response["result"] = f"Aplikasi {name} sudah terinstall"
-                    else:
-                        install_app_winget(name)
-                        response["result"] = f"Aplikasi {name} berhasil diinstall"
+                    success, message = install_app_winget(name)
+                    response["status"] = "success" if success else "error"
+                    response["result"] = message
                 elif method == "direct" and url:
                     if check_app_installed(name):
                         response["status"] = "info"
@@ -451,11 +578,12 @@ def on_message(ws, message):
             response["status"] = "error"
             response["result"] = f"Format command tidak dikenali: {type(command)}"
 
-        print(f"[RESPONSE] Mengirim respon: {response}")
+        print(f"[RESPONSE] Mengirim: {response}")
+        print("[DEBUG] -------- Selesai --------\n")
         ws.send(json.dumps(response))
 
     except Exception as e:
-        print("[ERROR] Error tidak terduga:", str(e))
+        print(f"[ERROR] Error tidak terduga: {str(e)}")
         if token:
             error_response = {
                 "token": token,
@@ -473,11 +601,9 @@ def on_close(ws, close_status_code, close_msg):
 def on_open(ws):
     print("[INFO] Tersambung ke WebSocket Server")
     
-   
     system_info = get_system_info()
     installed_apps = get_installed_apps()
     
- 
     try:
         data = {
             "token": ROBOT_TOKEN,
@@ -495,10 +621,22 @@ def on_open(ws):
     except Exception as e:
         print("[ERROR] Gagal mengirim informasi sistem:", str(e))
 
-ws = websocket.WebSocketApp("ws://192.168.1.13:7071",
-                            on_open=on_open,
-                            on_message=on_message,
-                            on_error=on_error,
-                            on_close=on_close)
+def run_websocket():
+    while True:
+        try:
+            ws = websocket.WebSocketApp("ws://192.168.1.13:7071",
+                                    on_open=on_open,
+                                    on_message=on_message,
+                                    on_error=on_error,
+                                    on_close=on_close)
+            
+            ws.run_forever()
+            print("[INFO] Mencoba reconnect dalam 5 detik...")
+            time.sleep(5)
+        except Exception as e:
+            print(f"[ERROR] WebSocket error: {str(e)}")
+            print("[INFO] Mencoba reconnect dalam 5 detik...")
+            time.sleep(5)
 
-ws.run_forever()
+if __name__ == "__main__":
+    run_websocket()
