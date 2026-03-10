@@ -1,0 +1,5 @@
+.env
+backend/.env
+backend (copy 1)/
+node_modules/
+*.pem
